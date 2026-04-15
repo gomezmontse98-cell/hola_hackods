@@ -1,0 +1,239 @@
+{
+  "cells": [
+    {
+      "cell_type": "raw",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Ciudades sin Agua en México\"\n",
+        "author: \"Aprendices de Foote\"\n",
+        "format: \n",
+        "  dashboard:\n",
+        "    orientation: columns\n",
+        "---"
+      ],
+      "id": "86c17347"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Gestión urbana"
+      ],
+      "id": "a60d5162"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "message": false
+      },
+      "source": [
+        "import pandas as pd\n",
+        "import plotly.express as px\n",
+        "import plotly.graph_objects as go\n",
+        "from plotly.subplots import make_subplots\n",
+        "import numpy as np\n",
+        "import geopandas as gpd"
+      ],
+      "id": "3b346788",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "df = pd.read_csv('C:\\\\Users\\\\montg\\\\OneDrive\\\\Desktop\\\\Hackods\\\\hola_hackods\\\\data\\\\6n.1.1_sh_es.csv')\n",
+        "\n",
+        "df.columns = df.columns.str.strip()\n",
+        "\n",
+        "df = df.rename(columns={\n",
+        "    'Entidad_federativa': 'entidad',\n",
+        "    'Periodo': 'año',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Total': 'total',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Hombres': 'hombres',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Mujeres': 'mujeres',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Hablantes_de_lengua_indígena': 'indigena',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Población_con_alguna_discapacidad': 'discapacidad'\n",
+        "})\n",
+        "\n",
+        "for col in ['total','hombres','mujeres','indigena','discapacidad']:\n",
+        "    df[col] = pd.to_numeric(df[col], errors='coerce')\n",
+        "\n",
+        "df_estatal = df[df['entidad'] != 'Estados_Unidos_Mexicanos']\n",
+        "df_nacional = df[df['entidad'] == 'Estados_Unidos_Mexicanos']\n",
+        "\n",
+        "fig2 = px.line(\n",
+        "    df_nacional.sort_values('año'),\n",
+        "    x='año',\n",
+        "    y='total',\n",
+        "    title='Acceso nacional al agua',\n",
+        "    markers=True,\n",
+        "    color_discrete_sequence=['#2a9d8f']\n",
+        ")\n",
+        "\n",
+        "fig2.update_layout(template='plotly_white')\n",
+        "fig1 = px.bar(\n",
+        "    df_estatal,\n",
+        "    x='total',\n",
+        "    y='entidad',\n",
+        "    animation_frame='año',\n",
+        "    orientation='h',\n",
+        "    color='total',\n",
+        "    color_continuous_scale='Tealgrn',\n",
+        "    title='Acceso al agua potable por Estado a través del tiempo'\n",
+        ")\n",
+        "\n",
+        "fig1.update_layout(template='plotly_white')\n",
+        "\n",
+        "df_grupos = df_nacional[['año','total','hombres','mujeres','indigena','discapacidad']]\n",
+        "\n",
+        "df_grupos = df_grupos.melt(id_vars='año', var_name='grupo', value_name='porcentaje')\n",
+        "\n",
+        "fig3 = px.bar(\n",
+        "    df_grupos,\n",
+        "    x='grupo',\n",
+        "    y='porcentaje',\n",
+        "    animation_frame='año',\n",
+        "    color='grupo',\n",
+        "    color_discrete_sequence=['#264653','#2a9d8f','#e9c46a','#f4a261','#e76f51'],\n",
+        "    title='Acceso por tipo de población'\n",
+        ")\n",
+        "\n",
+        "\n",
+        "fig3.update_layout(template='plotly_white', yaxis_range=[0,100])"
+      ],
+      "id": "39071572",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Nacional"
+      ],
+      "id": "ae266425"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig1.show()"
+      ],
+      "id": "e59ef054",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Estatal"
+      ],
+      "id": "ae91d681"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig2.show()"
+      ],
+      "id": "d4d87d99",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig3.show()"
+      ],
+      "id": "5f911357",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Inundaciones"
+      ],
+      "id": "316dfdbb"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "import geopandas as gpd\n",
+        "import plotly.express as px\n",
+        "\n",
+        "gdf = gpd.read_file(r'C:\\Users\\montg\\OneDrive\\Desktop\\Hackods\\hola_hackods\\data\\puntos.geojson')\n",
+        "\n",
+        "gdf['lon'] = gdf.geometry.centroid.x\n",
+        "gdf['lat'] = gdf.geometry.centroid.y"
+      ],
+      "id": "a535ebda",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "fig_mapa = px.scatter_map(\n",
+        "    gdf,\n",
+        "    lat='lat',\n",
+        "    lon='lon',\n",
+        "    hover_name=gdf.columns[0],\n",
+        "    zoom=5,\n",
+        "    height=600,\n",
+        "    title='Puntos críticas de inundación en México \\nFuente: CONAGUA-CENAPRED 2024',\n",
+        "    color_discrete_sequence=['#c9722b']\n",
+        ")"
+      ],
+      "id": "dffe4cfa",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Inundaciones en México"
+      ],
+      "id": "14467712"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig_mapa.show()     "
+      ],
+      "id": "679b157d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Acceso al agua  "
+      ],
+      "id": "7137acc4"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "c:\\Users\\montg\\OneDrive\\Desktop\\Hackods\\hola_hackods\\.venv\\share\\jupyter\\kernels\\python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

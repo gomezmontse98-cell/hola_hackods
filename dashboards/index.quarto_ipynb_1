@@ -1,0 +1,310 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Ciudades sin Agua en México\"\n",
+        "author: \"Aprendices de Foote\"\n",
+        "format: \n",
+        "  dashboard:\n",
+        "    orientation: columns\n",
+        "---\n",
+        "\n",
+        "# Acuíferos y abastecimiento hídrico en México\n",
+        "<iframe src=\"C:\\\\Users\\\\montg\\\\OneDrive\\\\Desktop\\\\Hackods\\\\hola_hackods\\\\data\\\\Mapa.pdf\" width=\"100%\" height=\"600px\"></iframe>\n",
+        "\n",
+        "\n",
+        "# Gestión urbana"
+      ],
+      "id": "d255ebc2"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "message": false
+      },
+      "source": [
+        "import pandas as pd\n",
+        "import plotly.express as px\n",
+        "import plotly.graph_objects as go\n",
+        "from plotly.subplots import make_subplots\n",
+        "import numpy as np\n",
+        "import geopandas as gpd"
+      ],
+      "id": "6ea2b85b",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "df = pd.read_csv('C:\\\\Users\\\\montg\\\\OneDrive\\\\Desktop\\\\Hackods\\\\hola_hackods\\\\data\\\\6n.1.1_sh_es.csv')\n",
+        "\n",
+        "df.columns = df.columns.str.strip()\n",
+        "\n",
+        "df = df.rename(columns={\n",
+        "    'Entidad_federativa': 'entidad',\n",
+        "    'Periodo': 'año',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Total': 'total',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Hombres': 'hombres',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Mujeres': 'mujeres',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Hablantes_de_lengua_indígena': 'indigena',\n",
+        "    'Población_con_acceso_al_agua_entubada_y_al_saneamiento|Población_con_alguna_discapacidad': 'discapacidad'\n",
+        "})\n",
+        "\n",
+        "for col in ['total','hombres','mujeres','indigena','discapacidad']:\n",
+        "    df[col] = pd.to_numeric(df[col], errors='coerce')\n",
+        "\n",
+        "df_estatal = df[df['entidad'] != 'Estados_Unidos_Mexicanos']\n",
+        "df_nacional = df[df['entidad'] == 'Estados_Unidos_Mexicanos']\n",
+        "\n",
+        "fig2 = px.line(\n",
+        "    df_nacional.sort_values('año'),\n",
+        "    x='año',\n",
+        "    y='total',\n",
+        "    title='Acceso nacional al agua',\n",
+        "    markers=True,\n",
+        "    color_discrete_sequence=['#2a9d8f']\n",
+        ")\n",
+        "\n",
+        "fig2.update_layout(template='plotly_white')\n",
+        "fig1 = px.bar(\n",
+        "    df_estatal,\n",
+        "    x='total',\n",
+        "    y='entidad',\n",
+        "    animation_frame='año',\n",
+        "    orientation='h',\n",
+        "    color='total',\n",
+        "    color_continuous_scale='Tealgrn',\n",
+        "    title='Acceso al agua potable por Estado a través del tiempo'\n",
+        ")\n",
+        "\n",
+        "fig1.update_layout(template='plotly_white')\n",
+        "\n",
+        "df_grupos = df_nacional[['año','total','hombres','mujeres','indigena','discapacidad']]\n",
+        "\n",
+        "df_grupos = df_grupos.melt(id_vars='año', var_name='grupo', value_name='porcentaje')\n",
+        "\n",
+        "fig3 = px.bar(\n",
+        "    df_grupos,\n",
+        "    x='grupo',\n",
+        "    y='porcentaje',\n",
+        "    animation_frame='año',\n",
+        "    color='grupo',\n",
+        "    color_discrete_sequence=['#264653','#2a9d8f','#e9c46a','#f4a261','#e76f51'],\n",
+        "    title='Acceso por tipo de población'\n",
+        ")\n",
+        "\n",
+        "\n",
+        "fig3.update_layout(template='plotly_white', yaxis_range=[0,100])"
+      ],
+      "id": "3a2656e4",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Nacional"
+      ],
+      "id": "b3653e24"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig1.show()"
+      ],
+      "id": "ef3f6a1a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Estatal"
+      ],
+      "id": "ea498e2c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig2.show()"
+      ],
+      "id": "65e40a67",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig3.show()"
+      ],
+      "id": "51d6d0f8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Inundaciones"
+      ],
+      "id": "248d9e1e"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "import geopandas as gpd\n",
+        "import plotly.express as px\n",
+        "\n",
+        "gdf = gpd.read_file(r'C:\\Users\\montg\\OneDrive\\Desktop\\Hackods\\hola_hackods\\data\\puntos.geojson')\n",
+        "\n",
+        "gdf['lon'] = gdf.geometry.centroid.x\n",
+        "gdf['lat'] = gdf.geometry.centroid.y"
+      ],
+      "id": "daf8b620",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "fig_mapa = px.scatter_map(\n",
+        "    gdf,\n",
+        "    lat='lat',\n",
+        "    lon='lon',\n",
+        "    hover_name=gdf.columns[0],\n",
+        "    zoom=5,\n",
+        "    height=600,\n",
+        "    title='Puntos críticas de inundación en México \\nFuente: CONAGUA-CENAPRED 2024',\n",
+        "    color_discrete_sequence=['#c9722b']\n",
+        ")"
+      ],
+      "id": "6b1d7043",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Inundaciones en México"
+      ],
+      "id": "04d1da85"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig_mapa.show()     "
+      ],
+      "id": "0d0c5ad1",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Afectaciones por inundaciones  "
+      ],
+      "id": "ebaeab3b"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "\n",
+        "df_decesos = pd.DataFrame({\n",
+        "    'raw': [\n",
+        "        \"M\",\"H\",\"3H\",\"H\",\"3H, 2M\",\"H\",\"H\",\"4H, 3M\",\"H\",\"H\",\"M\",\"M\",\n",
+        "        \"3H, M\",\"M\",\"H\",\"H\",\"2H\",\"H\",\"H\",\"H\",\"3H, M\",\"H\",\"H\",\"H\",\n",
+        "        \"H, M\",\"M\",\"H\",\"H\",\"2H\",\"H, M\",\"H\",\"M\",\"22M, 15H\",\"H\",\"H\",\n",
+        "        \"H\",\"H\",\"M\",\"2H\",\"3H\",\"H\",\"M\",\"H, M\",\"2H\",\"M\",\"M\",\"H\",\"M\",\n",
+        "        \"H, 2M\",\"H\",\"H, M\",\"H, M\",\"H\",\"2H\",\"H\",\"M\",\"2H, 2M\",\"H\",\n",
+        "        \"H, M\",\"H\",\"2H\",\"2H, 4M\",\"2M\",\"H, M\",\"H\",\"H\",\"H, M\",\"H\",\"H\"\n",
+        "    ]\n",
+        "})\n",
+        "\n",
+        "def separar(val):\n",
+        "    hombres = 0\n",
+        "    mujeres = 0\n",
+        "    \n",
+        "    partes = val.split(',')\n",
+        "    \n",
+        "    for p in partes:\n",
+        "        p = p.strip()\n",
+        "        \n",
+        "        if 'H' in p:\n",
+        "            numero = p.replace('H','')\n",
+        "            hombres += int(numero) if numero != '' else 1\n",
+        "            \n",
+        "        if 'M' in p:\n",
+        "            numero = p.replace('M','')\n",
+        "            mujeres += int(numero) if numero != '' else 1\n",
+        "    \n",
+        "    return pd.Series([hombres, mujeres])\n",
+        "\n",
+        "df_decesos[['Hombres','Mujeres']] = df_decesos['raw'].apply(separar)\n",
+        "\n",
+        "totales = df_decesos[['Hombres','Mujeres']].sum().reset_index()\n",
+        "totales.columns = ['grupo','decesos']"
+      ],
+      "id": "e14f6af9",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| output: false\n",
+        "fig = px.bar(\n",
+        "    totales,\n",
+        "    x='grupo',\n",
+        "    y='decesos',\n",
+        "    color='grupo',\n",
+        "    color_discrete_sequence=['#457b9d','#e63946'],\n",
+        "    title='Decesos por inundaciones por género (2000 - 2015, CENAPRED)'\n",
+        ")"
+      ],
+      "id": "e8e9ccd2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "fig.show()"
+      ],
+      "id": "69d6c69f",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "c:\\Users\\montg\\OneDrive\\Desktop\\Hackods\\hola_hackods\\.venv\\share\\jupyter\\kernels\\python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

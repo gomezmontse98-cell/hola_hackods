@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns:atom="http://www.w3.org/2005/Atom" xmlns="http://www.opengis.net/kml/2.2"> <NetworkLink>
+<open>1</open>
+<name>puntos_criticos_de_inundacion_conaguacenapred_2024</name>
+<LookAt>
+<longitude>0.0</longitude>
+<latitude>6.244444632025818</latitude>
+<range>2.34E7</range>
+</LookAt>
+<Link>
+<viewRefreshMode>onRequest</viewRefreshMode>
+<href>http://servicios1.cenapred.unam.mx:6080/arcgis/services/ANR/Fenomenos_Hidrometeorologicos/MapServer/KmlServer?Composite=false&amp;LayerIDs=54</href>
+<viewFormat>BBOX=[bboxWest],[bboxSouth],[bboxEast],[bboxNorth];CAMERA=[lookatLon],[lookatLat],[lookatRange],[lookatTilt],[lookatHeading];VIEW=[horizFov],[vertFov],[horizPixels],[vertPixels],[terrainEnabled]</viewFormat>
+</Link>
+</NetworkLink>
+</kml>
